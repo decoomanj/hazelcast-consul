@@ -7,6 +7,8 @@ A hazelcast resolver for Consul
 
 Update your cluster.xml like this:
 
+(I assume that the consul is running locally with his Agent. I will add support
+for hostname/port soon)
 
 ```
    <join>
