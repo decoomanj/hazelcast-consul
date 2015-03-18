@@ -19,6 +19,7 @@ import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.ConsulConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.orbitz.consul.CatalogClient;
 import com.orbitz.consul.Consul;
@@ -31,15 +32,15 @@ import java.util.List;
 
 public class TcpIpJoinerOverConsul extends TcpIpJoiner {
 
-    final CatalogClient agentClient;
-    final ConsulConfig consulConfig;
-    final ILogger logger;
+    private CatalogClient agentClient;
+    private final ConsulConfig consulConfig;
+    private final ILogger logger;
 
     public TcpIpJoinerOverConsul(Node node) {
         super(node);
-        this.agentClient = Consul.newClient().catalogClient();
-        logger = node.getLogger(getClass());
-        consulConfig = node.getConfig().getNetworkConfig().getJoin().getConsulConfig();
+        this.logger = node.getLogger(getClass());
+        this.consulConfig = node.getConfig().getNetworkConfig().getJoin().getConsulConfig();
+        this.initClient();
     }
 
     @Override
@@ -51,7 +52,7 @@ public class TcpIpJoinerOverConsul extends TcpIpJoiner {
 
             ConsulResponse<List<CatalogService>> service = this.agentClient.getService(name);
 
-            logger.warning("Resolving service: " + name);
+            logger.info("Resolving service: " + name);
 
             for (CatalogService s : service.getResponse()) {
                 if (logger.isFinestEnabled()) {
@@ -61,8 +62,8 @@ public class TcpIpJoinerOverConsul extends TcpIpJoiner {
             }
 
             if (list.isEmpty()) {
-                logger.warning("No consul instances found!");
-            } 
+                logger.info("No services found!");
+            }
             return list;
         } catch (Exception e) {
             logger.warning(e);
@@ -73,6 +74,18 @@ public class TcpIpJoinerOverConsul extends TcpIpJoiner {
     @Override
     protected int getConnTimeoutSeconds() {
         return this.consulConfig.getConnectionTimeoutSeconds();
+    }
+
+    private void initClient() {
+        String host = this.consulConfig.getHost();
+        if (host != null && !host.trim().isEmpty()) {            
+            AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(host, 5800);
+            logger.finest("Connecting to consul at: " + addressHolder.toString());
+            this.agentClient = Consul.newClient(addressHolder.getAddress(), addressHolder.getPort()).catalogClient();
+        } else {
+            logger.finest("Connecting to local consul agent");
+            this.agentClient = Consul.newClient().catalogClient();
+        }
     }
 
     @Override
