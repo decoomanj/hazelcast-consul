@@ -17,8 +17,11 @@ package com.hazelcast.consul;
 
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.ConsulConfig;
+import com.hazelcast.config.SpiJoinerConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.SpiJoiner;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.orbitz.consul.CatalogClient;
@@ -30,17 +33,15 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TcpIpJoinerOverConsul extends TcpIpJoiner {
+public class TcpIpJoinerOverConsul extends TcpIpJoiner implements SpiJoiner {
 
     private CatalogClient agentClient;
-    private final ConsulConfig consulConfig;
-    private final ILogger logger;
+    private ConsulConfig consulConfig;
+    private static final ILogger logger = Logger.getLogger(TcpIpJoinerOverConsul.class);
+
 
     public TcpIpJoinerOverConsul(Node node) {
         super(node);
-        this.logger = node.getLogger(getClass());
-        this.consulConfig = node.getConfig().getNetworkConfig().getJoin().getConsulConfig();
-        this.initClient();
     }
 
     @Override
@@ -91,5 +92,11 @@ public class TcpIpJoinerOverConsul extends TcpIpJoiner {
     @Override
     public String getType() {
         return "consul";
+    }
+
+    @Override
+    public void initialize(Node node, SpiJoinerConfig joinConfig) {
+        this.consulConfig = new ConsulConfig(joinConfig);
+        this.initClient();
     }
 }
