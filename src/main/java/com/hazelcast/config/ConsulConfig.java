@@ -27,17 +27,11 @@ public class ConsulConfig extends AbstractXmlConfigHelper{
 
     private String name;
     private String host;
-    private boolean enabled;
-    private String type;
-    private Node node;
 
     private int connectionTimeoutSeconds = CONNECTION_TIMEOUT;
 
     public ConsulConfig(SpiJoinerConfig joinerConfig) {
-        this.enabled = joinerConfig.isEnabled();
-        this.type = joinerConfig.getType();
-        this.node = joinerConfig.getNode();
-        handleConsul(node);
+        handleConsul(joinerConfig.getXmlNode());
     }
 
     /**
@@ -69,26 +63,6 @@ public class ConsulConfig extends AbstractXmlConfigHelper{
             throw new IllegalArgumentException("connection timeout can't be smaller than 0");
         }
         this.connectionTimeoutSeconds = connectionTimeoutSeconds;
-        return this;
-    }
-
-    /**
-     * Checks if the Consul join mechanism is enabled.
-     *
-     * @return true if enabled, false otherwise
-     */
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    /**
-     * Enables or disables the Consul join mechanism.
-     *
-     * @param enabled true to enable the Consul join mechanism, false to disable
-     * @return ConsulConfig the updated ConsulConfig config.
-     */
-    public ConsulConfig setEnabled(final boolean enabled) {
-        this.enabled = enabled;
         return this;
     }
 
@@ -128,23 +102,23 @@ public class ConsulConfig extends AbstractXmlConfigHelper{
 
     @Override
     public String toString() {
-        return "Consul [enabled=" + enabled
+        return "Consul [enabled=" + true
                 + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds
                 + ", name=" + this.name
                 + "]";
     }
 
-    private void handleConsul(final org.w3c.dom.Node node) {
-        final NamedNodeMap atts = node.getAttributes();
+    private void handleConsul(final Node xmlNode) {
+        final NamedNodeMap atts = xmlNode.getAttributes();
         for (int a = 0; a < atts.getLength(); a++) {
-            final org.w3c.dom.Node att = atts.item(a);
+            final Node att = atts.item(a);
             final String value = getTextContent(att).trim();
 
             if (att.getNodeName().equals("connection-timeout-seconds")) {
                 setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE));
             }
         }
-        for (org.w3c.dom.Node n : new AbstractXmlConfigHelper.IterableNodeList(node.getChildNodes())) {
+        for (Node n : new AbstractXmlConfigHelper.IterableNodeList(xmlNode.getChildNodes())) {
             final String value = getTextContent(n).trim();
             if ("name".equals(cleanNodeName(n.getNodeName()))) {
                 setName(value);
