@@ -15,10 +15,11 @@
  */
 package com.hazelcast.consul;
 
+import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.ConsulConfig;
+import com.hazelcast.config.SpiJoinerConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.orbitz.consul.CatalogClient;
@@ -32,15 +33,27 @@ import java.util.List;
 
 public class TcpIpJoinerOverConsul extends TcpIpJoiner {
 
+    public static final String JOINER_TYPE = "consul";
+
     private CatalogClient agentClient;
-    private final ConsulConfig consulConfig;
-    private final ILogger logger;
+    private ConsulConfig consulConfig;
 
     public TcpIpJoinerOverConsul(Node node) {
         super(node);
-        this.logger = node.getLogger(getClass());
-        this.consulConfig = node.getConfig().getNetworkConfig().getJoin().getConsulConfig();
-        this.initClient();
+    }
+
+    public Joiner setConfig(SpiJoinerConfig joinConfig) {
+        this.consulConfig = new ConsulConfig(joinConfig);
+        String host = this.consulConfig.getHost();
+        if (host != null && !host.trim().isEmpty()) {
+            AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(host, 5800);
+            logger.finest("Connecting to consul at: " + addressHolder.toString());
+            this.agentClient = Consul.newClient(addressHolder.getAddress(), addressHolder.getPort()).catalogClient();
+        } else {
+            logger.finest("Connecting to local consul agent");
+            this.agentClient = Consul.newClient().catalogClient();
+        }
+        return this;
     }
 
     @Override
@@ -76,20 +89,9 @@ public class TcpIpJoinerOverConsul extends TcpIpJoiner {
         return this.consulConfig.getConnectionTimeoutSeconds();
     }
 
-    private void initClient() {
-        String host = this.consulConfig.getHost();
-        if (host != null && !host.trim().isEmpty()) {            
-            AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(host, 5800);
-            logger.finest("Connecting to consul at: " + addressHolder.toString());
-            this.agentClient = Consul.newClient(addressHolder.getAddress(), addressHolder.getPort()).catalogClient();
-        } else {
-            logger.finest("Connecting to local consul agent");
-            this.agentClient = Consul.newClient().catalogClient();
-        }
-    }
-
     @Override
     public String getType() {
-        return "consul";
+        return JOINER_TYPE;
     }
+
 }

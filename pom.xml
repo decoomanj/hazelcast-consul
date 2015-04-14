@@ -21,6 +21,10 @@
             <name>Jan De Cooman</name>
             <email>jan_decooman@yahoo.com</email>
         </developer>
+        <developer>
+            <name>Guiquan Weng</name>
+            <email>weng.guiquan@gmail.com</email>
+        </developer>
     </developers>
 
     <properties>
