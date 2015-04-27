@@ -16,19 +16,32 @@
 package com.hazelcast.consul;
 
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.config.SpiJoinerConfig;
+import com.hazelcast.config.spi.CustomJoinerConfig;
+import com.hazelcast.config.spi.CustomJoinerFactory;
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.SpiJoinerFactory;
 
-public class TcpIpJoinerOverConsulFactory implements SpiJoinerFactory {
+public class ConsulJoinerFactory implements CustomJoinerFactory {
 
+    /**
+     * The tag must match the type in order to be activated.
+     * 
+     * @return 
+     */
     @Override
     public String getType() {
-        return TcpIpJoinerOverConsul.JOINER_TYPE;
+        return ConsulJoiner.JOINER_TYPE;
     }
 
+    /**
+     * Creates a joiner. SPI doesn't allow parameters in constructors, so
+     * we have to do it this way. However, it adds some complexity.
+     * 
+     * @param node
+     * @param config
+     * @return 
+     */
     @Override
-    public Joiner createJoiner(Node node, SpiJoinerConfig joinConfig) {
-        return new TcpIpJoinerOverConsul(node).setConfig(joinConfig);
+    public Joiner createJoiner(final Node node, final CustomJoinerConfig config) {
+        return new ConsulJoiner(node, new ConsulConfig(config));
     }
 }

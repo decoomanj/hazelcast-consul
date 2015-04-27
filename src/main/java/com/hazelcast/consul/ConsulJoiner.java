@@ -15,10 +15,7 @@
  */
 package com.hazelcast.consul;
 
-import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
-import com.hazelcast.config.ConsulConfig;
-import com.hazelcast.config.SpiJoinerConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.ExceptionUtil;
@@ -31,19 +28,26 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TcpIpJoinerOverConsul extends TcpIpJoiner {
+public class ConsulJoiner extends TcpIpJoiner {
 
     public static final String JOINER_TYPE = "consul";
 
     private CatalogClient agentClient;
-    private ConsulConfig consulConfig;
+    
+    final private ConsulConfig consulConfig;
 
-    public TcpIpJoinerOverConsul(Node node) {
+    public ConsulJoiner(final Node node, final ConsulConfig consulConfig) {
         super(node);
+        this.consulConfig = consulConfig;
+        
+        // autoconnect to consul
+        this.connect();
     }
 
-    public Joiner setConfig(SpiJoinerConfig joinConfig) {
-        this.consulConfig = new ConsulConfig(joinConfig);
+    /**
+     * Connect to the consul
+     */
+    private void connect() {
         String host = this.consulConfig.getHost();
         if (host != null && !host.trim().isEmpty()) {
             AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(host, 5800);
@@ -52,10 +56,14 @@ public class TcpIpJoinerOverConsul extends TcpIpJoiner {
         } else {
             logger.finest("Connecting to local consul agent");
             this.agentClient = Consul.newClient().catalogClient();
-        }
-        return this;
+        } 
     }
 
+    /**
+     * Get a list of all members.
+     * 
+     * @return a collection with all members
+     */
     @Override
     protected Collection<String> getMembers() {
 

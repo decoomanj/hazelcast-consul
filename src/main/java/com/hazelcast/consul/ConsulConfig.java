@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.config;
+package com.hazelcast.consul;
 
+import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.spi.CustomJoinerConfig;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -30,7 +32,7 @@ public class ConsulConfig extends AbstractXmlConfigHelper{
 
     private int connectionTimeoutSeconds = CONNECTION_TIMEOUT;
 
-    public ConsulConfig(SpiJoinerConfig joinerConfig) {
+    public ConsulConfig(CustomJoinerConfig joinerConfig) {
         handleConsul(joinerConfig.getXmlNode());
     }
 
