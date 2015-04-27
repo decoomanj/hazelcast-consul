@@ -20,6 +20,9 @@ import com.hazelcast.config.spi.CustomJoinerConfig;
 import com.hazelcast.config.spi.CustomJoinerFactory;
 import com.hazelcast.instance.Node;
 
+/**
+ * @author: Jan De Cooman, Guiquan Weng
+ */
 public class ConsulJoinerFactory implements CustomJoinerFactory {
 
     /**
